@@ -138,31 +138,16 @@ def create_digital_buffer():
 
 def compute_fft(data):
     # Remove DC offset
-    balanced_signal = data - np.mean(data)
-    # Apply window
-    windowed_signal = balanced_signal * np.blackman(len(balanced_signal))
+    data_no_dc = data - np.mean(data)
+    # Apply Blackman window
+    windowed_signal = data_no_dc * np.blackman(len(data_no_dc))
     data_fft = np.fft.fft(windowed_signal)
-    length = len(balanced_signal)
-    # return only positive half of the spectrum
-    data_fft = data_fft[:length // 2]
-
-    # We are using only bin numbers, so we do not need frequency computation
-    # Uncomment this to compute FFT frequencies
-    # d - time step, inverse of the sampling rate
-    # freq = np.fft.fftfreq(len(balanced_signal), d=1 / pg_available_sample_rates[1])
-    # we do fft shift because fft function plots positive frequencies first
-    # without fft shift we get a line connecting the last point of the positive
-    # frequencies to the first point of the negative frequencies.
-    # data_fft = np.fft.fftshift(data_fft)
-    # freq = np.fft.fftshift(freq)
-    # data_fft = data_fft[length // 2:]
-    # NOTE: If you choose to use frequencies instead of bins, remember to add
-    # the variable freq as a return value for this function
-
-    return data_fft, length
+    # return only positive half of the spectrum.
+    data_fft = data_fft[:len(data_fft) // 2]
+    return data_fft # Note that this is still complex data.
 
 
-def light_transmittance(red_bins, green_bins, blue_bins, measured_data_fft, ref_data_fft, length):
+def light_transmittance(red_bins, green_bins, blue_bins, measured_data_fft, ref_data_fft):
     # Given the selected bins for Red , Green , Blue --> compute light transmittance
     # Compute Sample_Magnitude and Reference_Magnitude for each color
     red_power_sample = np.sqrt(np.sum(np.abs(measured_data_fft[red_bins]) ** 2.0))
@@ -175,39 +160,12 @@ def light_transmittance(red_bins, green_bins, blue_bins, measured_data_fft, ref_
     blue_power_ref = np.sqrt(np.sum(np.abs(ref_data_fft[blue_bins]) ** 2.0))
 
     # Calculate Light transmittance : Sample_Magnitude divided by Reference_Magnitude
-    red_abs = round(red_power_sample) / round(red_power_ref) * 100
-
-    green_abs = round(green_power_sample) / round(green_power_ref) * 100
-
-    blue_abs = round(blue_power_sample) / round(blue_power_ref) * 100
+    red_abs = red_power_sample / red_power_ref * 100
+    green_abs = green_power_sample / green_power_ref * 100
+    blue_abs = blue_power_sample / blue_power_ref * 100
 
     return red_abs, green_abs, blue_abs
 
-
-def another_path_to_light_transmittance(measured_data_fft, ref_data_fft, freq, length):
-    # Instead of picking the bins from the FFT, they can be determined programmatically (see commented section below)
-    # In this, case the frequency vector is used, to search for frequencies +/- 10 Hz around the frequency for the
-    # signals driving each light source.
-    red_bins = np.where((freq <= red_freq + 10) & (freq >= red_freq - 10))
-    red_mag = (2.0 / length * np.abs(measured_data_fft[red_bins]))
-    red_ref = (2.0 / length * np.abs(ref_data_fft[red_bins]))
-
-    green_bins = np.where((freq <= green_freq + 10) & (freq >= green_freq - 10))
-    green_mag = (2.0 / length * np.abs(measured_data_fft[green_bins]))
-    green_ref = (2.0 / length * np.abs(ref_data_fft[green_bins]))
-
-    blue_bins = np.where((freq <= blue_freq + 10) & (freq >= blue_freq - 10))
-    blue_mag = (2.0 / length * np.abs(measured_data_fft[blue_bins]))
-    blue_ref = (2.0 / length * np.abs(ref_data_fft[blue_bins]))
-
-    # Calculate Light Transmittance : Sample_Magnitude divided by Reference_Magnitude
-    red_abs = np.average(red_mag) / np.average(red_ref) * 100
-
-    green_abs = np.average(green_mag) / np.average(green_ref) * 100
-
-    blue_abs = np.average(blue_mag) / np.average(blue_ref) * 100
-
-    return red_abs, green_abs, blue_abs
 
 
 def set_powersupply(ps):

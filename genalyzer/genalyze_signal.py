@@ -22,13 +22,20 @@ window = gn.Window.NO_WINDOW  # FFT window
 fsr = 2.0  # Full-scale range
 fund_freq = 1.0  # Hz
 
+# This is a list of the amplitudes (in dBfs) of the fundamental (first element)
+# and harmonics. You can add more harmonics to the list, but we'll start
+# out with just the 2nd, 3rd, and 4th.
 # Replace -200.0 with greater values to add harmonics
-harm_dbfs = [-3.0, -200.0, -200.0, -200.0]
+harm_dbfs = [-3.0, -23.0, -200.0, -200.0]
 
+# These are lists of the frequencies (Hz) and amplitudes (in dBfs) of
+# interfering tones or "noise tones". Genalyzer will interpret them as not
+# harmonically related and add them to the total noise.
 noise_freqs = [1.5, 2.5, 3.5, 4.5]
 # Replace -200.0 with greater values to add noise tones
-noise_dbfs = [-200.0, -200.0, -200.0, -200.0]
-# Calculate amplitudes from dBfs
+noise_dbfs = [-200.0, -23.0, -200.0, -200.0]
+
+# Calculate absolute amplitudes from dBfs.
 harm_ampl = []
 for x in range(len(harm_dbfs)):
     harm_ampl.append((fsr / 2) * 10 ** (harm_dbfs[x] / 20))

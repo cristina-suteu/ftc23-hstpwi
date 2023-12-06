@@ -102,9 +102,7 @@ print(gn.fa_preview(key, False))
 # Fourier analysis results
 fft_results = gn.fft_analysis(key, fft_cplx, nfft)
 # compute THD
-# result is in dBFS
-fft_results['thd'] = (10 * np.log10(10 ** (fft_results['2A:mag_dbfs'] / 10) + (10 ** (fft_results['3A:mag_dbfs'] / 10))
-                                    + (10 ** (fft_results['4A:mag_dbfs'] / 10))))
+thd = 20 * np.log10(fft_results['thd_rss'] / harm_ampl[0])
 
 print("\nFourier Analysis Results:\n")
 print("\nFrequency, Phase and Amplitude for Harmonics:\n")
@@ -117,8 +115,9 @@ print("\nFrequency, Phase and Amplitude for Noise:\n")
 for k in ['wo:freq','wo:mag_dbfs', 'wo:phase']:
     print("{:20s}{:20.6f}".format(k, fft_results[k]))
 print("\nSNR and THD \n")
-for k in ['fsnr', 'thd']:
+for k in ['snr', 'fsnr']:
     print("{:20s}{:20.6f}".format(k, fft_results[k]))
+print("{:20s}{:20.6f}".format("thd", thd))
 
 # Plot FFT
 pl.figure(2)

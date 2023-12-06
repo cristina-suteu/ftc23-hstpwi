@@ -3,7 +3,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 import colorimeter_functions
 import sys
-import string
 
 # We tried to make this as human-readable as possible. No yucky long complicated scripts
 # If you want to look under the hood, all the functions used here are nicely wrapped in
@@ -12,8 +11,9 @@ import string
 # Connect to M2K and Initialize ADC and Pattern Generator Objects
 uri = "ip:192.168.2.1"
 ctx = libm2k.m2kOpen(uri)
-ctx.calibrateADC()
 adc = ctx.getAnalogIn()
+adc.setSampleRate(100000000)
+ctx.calibrateADC()
 digital = ctx.getDigital()
 ps = ctx.getPowerSupply()
 
@@ -24,8 +24,7 @@ colorimeter_functions.set_powersupply(ps)
 
 adc.enableChannel(0, True)
 adc.enableChannel(1, True)
-
-adc.setSampleRate(colorimeter_functions.pg_available_sample_rates[1])
+adc.setSampleRate(10000)
 adc.setRange(0, -1, 1)
 adc.setRange(1, -1, 1)
 

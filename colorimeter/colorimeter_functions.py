@@ -166,8 +166,6 @@ def light_transmittance(red_bins, green_bins, blue_bins, measured_data_fft, ref_
 
     return red_abs, green_abs, blue_abs
 
-
-
 def set_powersupply(ps):
     # enable and set power supply pins to +5, -5 V to power up OP Amp
     ps.reset()

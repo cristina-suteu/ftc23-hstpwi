@@ -3,10 +3,14 @@ import numpy as np
 import matplotlib.pyplot as plt
 import colorimeter_functions
 import sys
+import string
 
-uri = "ip:192.168.2.1"
+# We tried to make this as human-readable as possible. No yucky long complicated scripts
+# If you want to look under the hood, all the functions used here are nicely wrapped in
+# the colorimeter_functions file
 
 # Connect to M2K and Initialize ADC and Pattern Generator Objects
+uri = "ip:192.168.2.1"
 ctx = libm2k.m2kOpen(uri)
 ctx.calibrateADC()
 adc = ctx.getAnalogIn()
@@ -35,7 +39,7 @@ for i in range(13, 16):
 digital.setCyclic(True)
 
 # Create digital buffer, to be pushed to Digital Outputs
-# this is used to drive the RGB LED
+# This is used to drive the RGB LED
 
 digital_buffer = colorimeter_functions.create_digital_buffer()
 digital.push(digital_buffer)
@@ -47,12 +51,12 @@ fig.set_figwidth(6)
 
 # Set-up FFT Plot
 ax1.set_title("FFT Plot")
-ax1.set_ylim([0, 0.2])
-
+ax1.set_ylim([0, 0.25])
 x = np.zeros(2048)
 line1, = ax1.plot(x, label="Reference Data")
 line2, = ax1.plot(x, label="Sample Data")
 ax1.legend()
+
 # Set-up transmittance plot
 ax2.set_title("transmittance Plot")
 ax2.set_ylim(0, 120)
@@ -61,11 +65,23 @@ colors = ['red', 'green', 'blue']
 transmittance = [0, 0, 0]
 bars = ax2.bar(colors, transmittance, color=bar_colors)
 
+# The photo diodes are slightly mismatched. This sometimes results in values over 100% for light transmittance
+# In order to avoid that, we can run a simple calibration routine
+# But, hey, don't take our word for it. Type in 'n', and check the results
 
-red_cal = green_cal = blue_cal = 1.0
-if red_cal == green_cal == blue_cal == 1.0: # Cheesy logic - look for a cal file instead. If it doesn't exist, set cal values to unity.
-    resp = input("Not calibrated. Would you like to run a calibration? (y or n)\n If so, place clear cuvettes in both reference and sample.")
+resp = input("Would you like to run a calibration? \n If so, place clear cuvettes in both "
+             "reference and sample. Type y or n , then press Enter. \n")
 
+# Ensure response is typed in correctly
+resp = resp.strip()  # This removes all whitespaces
+if resp == 'Y':
+    resp = 'y'
+# Calibration values for Red, Green and Blue
+# If you type 'y' these will be calculated based on ADC readings
+# Otherwise, they remain 1 and have no effect on the light transmittance
+red_cal = 1
+green_cal = 1
+blue_cal = 1
 
 # Where the magic happens
 while True:
@@ -83,25 +99,32 @@ while True:
     # Index of DC is 0
     # Replace 1s with actual bin numbers for each color
     # Hint: to create a list of integer numbers from m to n use range(m, n)
-    red_bins = range(202, 208)
-    green_bins = range(243, 249)
-    blue_bins = range(284, 290)
+    red_bins = range(1)
+    green_bins = range(1)
+    blue_bins = range(1)
 
     # Compute Light transmittance
     red_tr, green_tr, blue_tr = colorimeter_functions.light_transmittance(red_bins, green_bins, blue_bins,
                                                                           measured_data_fft, ref_data_fft)
-        
+    # Calibrate transmittance results, so we cannot go over 100%
     if resp == 'y':
-        red_cal = 100.0/red_tr
-        green_cal = 100.0/green_tr
-        blue_cal = 100.0/blue_tr
+        red_cal = 100.0 / red_tr
+        green_cal = 100.0 / green_tr
+        blue_cal = 100.0 / blue_tr
+        print("\n Calibration factors \n")
+        print("\n Red :" + str(red_cal) + " \n")
+        print("\n Green :" + str(green_cal) + " \n")
+        print("\n Blue :" + str(blue_cal) + " \n")
+
         resp = 'n'
     # Apply calibration 
     red_tr *= red_cal
     blue_tr *= blue_cal
     green_tr *= green_cal
-    
-    transmittance = [red_tr, green_tr, blue_tr]
+
+    # We are not interested in decimals here, so we're keeping only the truncated integer number
+    # from the computed transmittance values
+    transmittance = [np.trunc(red_tr), np.trunc(green_tr), np.trunc(blue_tr)]
 
     # Plot FFT
     data_ref = 2.0 / len(ref_data_fft) * np.abs(ref_data_fft)
@@ -115,9 +138,9 @@ while True:
     plt.show(block=False)
     plt.pause(2)
 
-    print("Red Light Transmittance ----- " + str(red_tr))
-    print("Green Light Transmittance ----- " + str(green_tr))
-    print("Blue Light Transmittance ----- " + str(blue_tr) + " \n")
+    print("Red Light Transmittance ----- {:.2f}".format(red_tr) + "% \n")
+    print("Green Light Transmittance ----- {:.2f}".format(green_tr) + "% \n")
+    print("Blue Light Transmittance ----- {:.2f}".format(blue_tr) + "% \n")
 
     # Purple Detector
     # Your Code Here
